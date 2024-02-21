@@ -5,7 +5,7 @@ const port = process.env.PORT || 3000;
 const cors = require('cors');
 var jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fzz1qah.mongodb.net/?retryWrites=true&w=majority`;
 
 app.use(cors({
@@ -13,6 +13,7 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser());
 
 
 
@@ -25,14 +26,30 @@ const client = new MongoClient(uri, {
     }
 });
 
+const verifyToken = (req, res, next) => {
+    const token = req.cookies.token;
+    if (!token) {
+        res.status(401).send({ "message": "unOthurized" })
+    }
+    jwt.verify(token, process.env.JWT_TOKEN_SECRET, (err, decode) => {
+        if (err) {
+            res.status(403).send({ "message": "token expired" })
+        }
+        req.user = decode
+        next();
+    })
+}
+
+
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
-
         const dataBase = client.db("BabyToy");
         const userList = dataBase.collection("users");
         const toyList = dataBase.collection("toys");
+        const toyCarts = dataBase.collection("toyCarts");
+
 
         app.put('/user', async (req, res) => {
             try {
@@ -49,11 +66,51 @@ async function run() {
             }
         })
 
+        //get all top
+        app.get('/toys/:type', async (req, res) => {
+            try {
+                const type = req.params.type;
+                if (type == 'all') {
+                    const result = await toyList.find().toArray();
+                    return res.status(200).send(result)
+                }
+                const result = await toyList.find({ ageType: req.params.type }).toArray();
+                res.status(200).send(result)
+            }
+            catch (err) {
+                res.status(402).send({ err: err.message })
+            }
+        })
+
+        // get specifiq toy details
+        app.get('/toyDetails/:id', async (req, res) => {
+            try {
+                const result = await toyList.findOne({ _id: new ObjectId(req.params.id) })
+                res.status(200).send(result)
+            }
+            catch (err) {
+                res.status(402).send({ err: err.message })
+            }
+        })
+
         //post new toy
         app.post('/addToy', async (req, res) => {
             try {
-                console.log(req.body);
                 const result = await toyList.insertOne(req.body);
+                res.status(200).send(result)
+            }
+            catch (err) {
+                res.status(402).send({ err: err.message })
+            }
+        })
+
+        //add to cart by user
+        app.post('/addCart', verifyToken, async (req, res) => {
+            try {
+                if (req.user.email !== req.body.email) {
+                    return res.status(404).send({ message: "unOthorize person" });
+                }
+                const result = await toyCarts.insertOne(req.body);
                 res.status(200).send(result)
             }
             catch (err) {
