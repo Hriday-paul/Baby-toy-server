@@ -9,7 +9,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fzz1qah.mongodb.net/?retryWrites=true&w=majority`;
 
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173', 'https://baby-toy-house.netlify.app'],
     credentials: true
 }));
 app.use(express.json());
@@ -39,7 +39,7 @@ const verifyToken = (req, res, next) => {
         next();
     })
 }
-
+//
 
 async function run() {
     try {
