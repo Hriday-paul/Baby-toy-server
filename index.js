@@ -104,19 +104,67 @@ async function run() {
             }
         })
 
-        //add to cart by user
-        app.post('/addCart', verifyToken, async (req, res) => {
+
+         // update toy
+        app.put('/updateToy', async (req, res) => {
             try {
-                if (req.user.email !== req.body.email) {
-                    return res.status(404).send({ message: "unOthorize person" });
-                }
-                const result = await toyCarts.insertOne(req.body);
+                const filter = {_id : new ObjectId(req.body.id)}
+                const updateDoc = {
+                    $set: req.body,
+                  };
+                const result = await toyList.updateOne(filter, updateDoc);
                 res.status(200).send(result)
             }
             catch (err) {
                 res.status(402).send({ err: err.message })
             }
         })
+
+
+        //add to cart by user
+        app.post('/addCart', async (req, res) => {
+            try {
+                const result = await toyCarts.insertOne(req.body);
+                res.status(200).send(result);
+            }
+            catch (err) {
+                res.status(402).send({ err: err.message })
+            }
+        })
+
+        //get cart toyss by specifiq user
+        app.get('/toyCart/:email', async (req, res) => {
+            try {
+                const result = await toyCarts.find({ email: req.params.email }).toArray();
+                res.status(200).send(result);
+            }
+            catch (err) {
+                res.status(402).send({ err: err.message })
+            }
+        })
+
+        // delete cart
+        app.delete('/deleteCart/:id', async (req, res) => {
+            try {
+                const result = await toyCarts.deleteOne({ _id: req.params.id });
+                res.status(200).send(result);
+            }
+            catch (err) {
+                res.status(402).send({ err: err.message });
+            }
+        })
+
+        // delete cart
+        app.get('/myToy/:email', async (req, res) => {
+            try {
+                const result = await toyList.find({email : req.params.email}).toArray();
+                res.status(200).send(result);
+            }
+            catch (err) {
+                res.status(402).send({ err: err.message });
+            }
+        })
+
 
         //create jwt token
         app.put("/crtJwt", async (req, res) => {
