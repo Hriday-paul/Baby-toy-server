@@ -104,6 +104,17 @@ async function run() {
             }
         })
 
+        //get toy with rating
+        app.get('/getToyWithRating', async (req, res) => {
+            try {
+                const result = await toyList.find({rating : 5}).toArray();
+                res.status(200).send(result)
+            }
+            catch (err) {
+                res.status(402).send({ err: err.message })
+            }
+        })
+
 
          // update toy
         app.put('/updateToy', async (req, res) => {
